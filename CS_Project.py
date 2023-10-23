@@ -1,3 +1,7 @@
+import mysql.connector
+from mysql.connector import Error
+from mysql.connector import errorcode
+
 def show_tables():
     conn_cursor = conn.cursor()
     conn_cursor.execute("SHOW TABLES")
@@ -9,9 +13,6 @@ def show_tables():
     for i in tables:
         print(f"{tables.index(i)+1} - {i}")
 
-import mysql.connector
-from mysql.connector import Error
-from mysql.connector import errorcode
 Datalist = []
 
 try:
