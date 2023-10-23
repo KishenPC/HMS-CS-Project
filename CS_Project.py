@@ -7,10 +7,7 @@ def describe_table():
     print("The Format Is, {Column Name : Data Type}")
     for i in table_desc:
         columns.update({i[0]:i[1].upper()})
-    print(columns)
-    
-    """Abin You Must (Somehow) allow table Vision in the UI, as providing a rough idea in code would be unnecessary and take alot of time
-    i trust you with the rest of this function definition. the function is later called and will be untouched until completion"""
+    print(f"{columns}\n")
 
 def show_tables():
     conn_cursor = conn.cursor()
@@ -29,7 +26,29 @@ def show_tables():
             print(f"\t\t{tables.index(i)+1}| {i}")
         print("\t\t.___________________.")
 
-def create_basic_tables():
+def insert_values():
+    table = input("Enter Table Name: ")
+    entries = int(input("Enter Number Of Entries: "))
+    print("The Columns Of The Table is as Follows: ")
+    conn_cursor.execute(f"DESCRIBE {table}")
+    table_desc = conn_cursor.fetchall()
+    columns = {} 
+    for i in table_desc:
+        columns.update({i[0]:i[1].upper()})
+    print(columns)
+    for i in range(entries):
+        entry = []
+        for z in columns():
+            x = input(f"Entry For Column {z}: ")
+            if x.strip() == "":
+                entry.append(NULL)
+            else:
+                entry.append(x)
+        conn_cursor.execute(f"INSERT INTO {table} VALUES {entry}") #Look Through This (Subject to Errors)
+
+        
+
+
 
 
 import mysql.connector as sq
@@ -47,18 +66,22 @@ try:
     if conn.is_connected():
         print("\n✓ Database Connection Established! ✓")
         print("_"*91)
-    print(f"\n-✧˖° Welcome To The {db} Databse Interface ˖°.✧-")
-    show_tables()
-    print("\n")
-    print("""Database Queries:-
-    1. Describe a Table""")
-    action = input("\nEnter Command: ")
-    if action.upper() == "DESCRIBE A TABLE":
-        describe_table()  
-    if action.upper() == "INSERT VALUE":
-
-
-    conn.close()
+        print(f"\n-✧˖° Welcome To The {db} Databse Interface ˖°.✧-")
+        show_tables()
+        print("\n")
+        while conn.is_connected():
+            print("""Database Queries:-
+            1. Describe a Table
+            2. Insert A Value
+            3. Close Connection""")
+            action = input("\nEnter Command: ")
+            if action.upper() == "CLOSE CONNECTION":
+                conn.close()
+            if action.upper() == "DESCRIBE A TABLE":
+                describe_table()  
+            if action.upper() == "INSERT A VALUE":
+                insert_values()
+            if action.upper() == "SELECT DATA" #Continue Here
 
 except sq.Error:
     print("✘ Connection Failed! ✘")
