@@ -4,7 +4,7 @@ def describe_table():
     conn_cursor.execute(f"DESCRIBE {table}")
     table_desc = conn_cursor.fetchall()
     columns = {} 
-    print("The Format Is, {Column Name : Data Type}")
+    print("\nThe Format Is, {Column Name : Data Type}")
     for i in table_desc:
         columns.update({i[0]:i[1].upper()})
     print(f"{columns}\n")
@@ -25,8 +25,10 @@ def show_tables():
         for i in tables:
             print(f"\t\t{tables.index(i)+1}| {i}")
         print("\t\t.___________________.")
+    conn.commit()
 
 def insert_values():
+    conn_cursor = conn.cursor()
     table = input("Enter Table Name: ")
     entries = int(input("Enter Number Of Entries: "))
     print("The Columns Of The Table is as Follows: ")
@@ -35,21 +37,29 @@ def insert_values():
     columns = {} 
     for i in table_desc:
         columns.update({i[0]:i[1].upper()})
-    print(columns)
+    print(f"{columns}\n")
+    print("Enter The Values In Order Seperated By / ~ [A,B,C,1,2]")
     for i in range(entries):
-        entry = []
-        for z in columns():
-            x = input(f"Entry For Column {z}: ")
-            if x.strip() == "":
-                entry.append(NULL)
-            else:
-                entry.append(x)
-        conn_cursor.execute(f"INSERT INTO {table} VALUES {entry}") #Look Through This (Subject to Errors)
+        entry = tuple(input().split("/"))
+        conn_cursor.execute(f"INSERT INTO {table} VALUES {entry}") #Under Maintenance
+    conn.commit()
+    
 
         
-
-
-
+def create_hosptial_db():
+    conn_cursor = conn.cursor()
+    conn_cursor.execute("SHOW TABLES")
+    show_tables = conn_cursor.fetchall()
+    tables = []
+    for i in show_tables:
+        for z in i: #Due to the fact that returned list of tables in the form [(t1,),(t2,)]
+            tables.append(z)
+    if ('Patient', 'Doctor') in tables:
+        print()
+    else:
+        conn_cursor.execute("CREATE TABLE Patient(Patient_ID INT PRIMARY KEY, Patient_Name VARCHAR(30), Patient_Gender VARCHAR(20), Address VARCHAR(50), Phone INT, Insurance_ID INT)")
+        conn_cursor.execute("CREATE TABLE Doctor(Doctor_ID INT PRIMARY KEY, Doctor_Name VARCHAR(30), Specialization VARCHAR(30), Doctor_Gender VARCHAR(20), Address VARCHAR(50), Phone INT)") 
+        
 
 import mysql.connector as sq
 from mysql.connector import Error
@@ -66,24 +76,27 @@ try:
     if conn.is_connected():
         print("\n✓ Database Connection Established! ✓")
         print("_"*91)
-        print(f"\n-✧˖° Welcome To The {db} Databse Interface ˖°.✧-")
+        print(f"\n-✧˖° Welcome To The HMS Databse Interface ˖°.✧-")
+        create_hosptial_db()
         show_tables()
-        print("\n")
+        
         while conn.is_connected():
-            print("""Database Queries:-
-            1. Describe a Table
-            2. Insert A Value
-            3. Close Connection""")
+            print("""\nDatabase Queries:-
+            1. Table Details
+            2. Record
+            3. Disconnect""")
             action = input("\nEnter Command: ")
-            if action.upper() == "CLOSE CONNECTION":
+            if action.upper() == "DISCONNECT":
                 conn.close()
-            if action.upper() == "DESCRIBE A TABLE":
-                describe_table()  
-            if action.upper() == "INSERT A VALUE":
+            if action.upper() == "TABLE DETAILS":
+                describe_table()
+            if action.upper() == "RECORD DATA":
                 insert_values()
-            if action.upper() == "SELECT DATA" #Continue Here
+                print("Values Recorded!\n")
+            if action.upper() == "":
+                pass #Continue Here
 
 except sq.Error:
-    print("✘ Connection Failed! ✘")
+    print("\n✘ Connection Failed! ✘")
     print(sq.Error)
     print("Make sure you have entered the right credentials for the database connection")
