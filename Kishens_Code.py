@@ -1,3 +1,5 @@
+import mysql.connector as sq
+
 def create_tables():
     conn_cursor = conn.cursor()
     conn_cursor.execute("""CREATE TABLE patient(
@@ -46,7 +48,7 @@ def drop_tables():
 
 def describe_table():
     conn_cursor = conn.cursor()
-    table = input("Enter Name Of Table To Describe: ").lower()
+    table = input("Enter Name Of Table To Describe > ").lower()
     conn_cursor.execute(f"DESCRIBE {table}")
     table_desc = conn_cursor.fetchall()
     columns = {} 
@@ -109,8 +111,8 @@ def insert_values():
             entry[1] = int(entry[1]); entry[4] = int(entry[4]); entry[5] = int(entry[5])
             patient_diagnosis = input("Enter Patient Diagnosis >")
             patient_room = int(input("Enter Patient Room (If Any) >"))
-            conn_cursor.execute(f"INSERT INTO Patient(Patient_Name, Patient_Age, Patient_Gender, Address, Phone, Insurance_ID) VALUES {tuple(entry)}")
-            conn_cursor.execute(f"INSERT INTO Diagnosis(Diagn) VALUES {tuple(entry)}") #Under Maintenance
+            conn_cursor.execute(f"INSERT INTO patient(Patient_Name, Patient_Age, Patient_Gender, Address, Phone, Insurance_ID) VALUES {tuple(entry)}")
+            conn_cursor.execute(f"INSERT INTO diagnosis(Patient_Diagnosis,Room_Number) VALUES {(patient_diagnosis,patient_room)}") #Under Maintenance
         elif table.upper() == "DOCTOR":
             entry[2]=int(entry[2]); entry[5]=int(entry[5])
             conn_cursor.execute(f"INSERT INTO {table}(Doctor_Name, Specialization, Doctor_Age, Doctor_Gender, Address, Phone) VALUES {tuple(entry)}") #Under Maintenance
@@ -136,7 +138,7 @@ def hosptial_db_setup():
     elif 'patient' not in tables and 'doctor' not in tables and  "diagnosis" not in tables:
         create_tables()
         #
-        conn.commit()  # COMPLETE DO NOT TOUCH, ALSO CHANGE INPUTTING VALUE CODE ACCORDINGLY
+        conn.commit()  # Complete
 
     else:
         print("\n⚠ Found Incomplete Database ⚠")
@@ -196,14 +198,14 @@ try:
             3| Disconnect
             4| Reset""")
 
-            action = input("\nEnter Command: ")
+            action = input("\nEnter Command > ")
             if action.upper() == "DISCONNECT":
                 conn.close()
             if action.upper() == "TABLE DETAILS":
                 describe_table()
             if action.upper() == "RECORD DATA":
                 insert_values()
-                print("Values Recorded!\n")
+                print("\nValues Recorded!")
             if action.upper() == "RESET":
                 reset_db()
                 pass #Continue Here
