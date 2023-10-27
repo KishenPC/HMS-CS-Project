@@ -10,7 +10,7 @@ from getpass import getpass
 # Functions
 def describe_table():
     cursor = conn.cursor()
-    table = input("(Bearz: Enter Name Of Table To Describe) > ")
+    table = input("(HMS: Enter Name Of Table To Describe) > ")
     cursor.execute(f"DESCRIBE {table}")
     table_desc = cursor.fetchall()
     columns = {} 
@@ -19,7 +19,7 @@ def describe_table():
         columns.update({i[0]:i[1].upper()})
     print(f"    {columns}\n")
 
-def show_tables():
+def all_tables():
     cursor = conn.cursor()
     cursor.execute("SHOW TABLES")
     show_tables = cursor.fetchall()
@@ -31,16 +31,16 @@ def show_tables():
     if len(tables) == 0:
         print("[#] There Are No Available Tables in Your Database") 
     else:
-        print("\t\t•———————————————————•")
-        print("\t\tList of Tables\n")
+        print("\t•———————————————————•")
+        print("\tList of Tables\n")
         for i in tables:
-            print(f"\t\t{tables.index(i)+1}| {i}")
-        print("\t\t•———————————————————•")
+            print(f"\t{tables.index(i)+1}| {i}")
+        print("\t•———————————————————•")
 
 def insert_values():
     cursor = conn.cursor()
-    table = input("(Bearz: Enter Table Name) > ")
-    entries = int(input("(Bearz: Enter Number Of Entries) > "))
+    table = input("(HMS: Enter Table Name) > ")
+    entries = int(input("(HMS: Enter Number Of Entries) > "))
 
     print("[⁎] The Columns Of The Table is as Follows: ")
     cursor.execute(f"DESCRIBE {table}")
@@ -53,7 +53,7 @@ def insert_values():
     ent=[]
     print("[&] If you don't have a value type null")
     for i in range(entries):
-        entry = tuple(input("(Bearz: Enter values) > ").split())
+        entry = tuple(input("(HMS: Enter values) > ").split())
         if not entry:
             print("[!] No value is entered")
             break
@@ -91,9 +91,10 @@ def insert_values():
     # '%s' is the no. of columns (you can change it according to the no. of columns)
 
 # this display table looks shit (it is not even a table but i will try to change it)
-def display_table():
+def show_table():
+    d_table = input("(HMS: Enter Table Name) > ")
     cursor=conn.cursor()
-    cursor.execute("SELECT * FROM test")
+    cursor.execute("SELECT * FROM "+d_table)
     item=cursor.fetchall()
     for i in item:
         print(i)
@@ -160,30 +161,42 @@ try:
         print(f"\n[⁎] Connected to {host}")
         print(f"[⁎] Welcome To The {db} Databse Interface\n")
         print("List of Tables:-")
-        show_tables()
+        all_tables()
 
         while conn.is_connected():
             print("""\nDatabase Queries:-
-            1. Describe a Table
-            2. Select Data
-            3. Insert A Value
-            4. Show table
-            5. Close Connection\n""")
+\t1. Describe a Table
+\t2. Select Data
+\t3. Insert A Value
+\t4. Show table
+\t5. Close Connection\n""")
 
-            action = input("(Bearz: Enter Command) > ")
-            if action in ["Describe a Table", "DESCRIBE A TABLE", "1"]:
+            action = input("(HMS: Enter Command) > ")
+            if action.upper()=="DESCRIBE A TABLE" or action=="1":
                 describe_table()
-            if action in ["Select Data", "SELECT DATA", "2"]:
+            if action.upper()=="SELECT DATA" or action=="2":
                 pass
-            if action in ["Insert A Value", "INSERT A VALUE", "3"]:
+            if action.upper()=="INSERT A VALUE" or action=="3":
                 insert_values()
-            if action in ["Show table", "4"]:
-                display_table()
-            if action in ["Close Connection", "CLOSE CONNECTION", "5"]:
-                print("[#]")
+            if action.upper()=="SHOW TABLE" or action=="4":
+                show_table()
+            if action.upper()=="CLOSE CONNECTION" or action=="5":
+                con_quit=input("Do you want to exit (close connection) ? press 'q' to exit: ")
+                if con_quit.upper()==["QUIT"] or con_quit in ["q", "Q"]:
+                    conn.close()
+                    print()
+            if action.upper()=="EXIT":
                 conn.close()
-
+                print()
+            else:
+                print("[!] Error: Wrong input")
 
 except sq.Error:
     print("\n[!] Error: Connection Failed!")
     print("[!] Error: Make sure you have entered the right credentials for the database connection\n")
+
+# this KeyboardInterrupt error happens when u press ctrl+c
+except KeyboardInterrupt:
+    ki_error=input("Do you want to exit ? press any letter to exit: ")
+    exit
+    print()
