@@ -11,7 +11,7 @@ def create_tables():
         Phone INT,
         Insurance_ID INT)""")
     conn_cursor.execute("""CREATE TABLE Doctor(
-        Doctor_ID INT PRIMARY KEY,
+        Doctor_ID INT PRIMARY KEY AUTO_INCREMENT,
         Doctor_Name VARCHAR(30),
         Specialization VARCHAR(30),
         Doctor_Age INT,
