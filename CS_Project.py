@@ -14,23 +14,28 @@ import os
 def create_tables():
     cursor = conn.cursor()
 
-    cursor.execute("""CREATE TABLE Patient(
-        Patient_ID INT PRIMARY KEY AUTO_INCREMENT,
-        Patient_Name VARCHAR(30),
-        Patient_Age INT,
-        Patient_Gender VARCHAR(7),
-        Address VARCHAR(50),
-        Phone INT,
-        Insurance_ID INT)""")
-    
     cursor.execute("""CREATE TABLE Doctor(
         Doctor_ID INT PRIMARY KEY AUTO_INCREMENT,
-        Doctor_Name VARCHAR(30),
+        First_Name VARCHAR(15),
+        Last_Name VARCHAR(15),
         Specialization VARCHAR(30),
         Doctor_Age INT,
-        Doctor_Gender VARCHAR(20),
+        Doctor_Gender VARCHAR(6),
         Address VARCHAR(50),
-        Phone INT)""")
+        Phone VARCHAR(11))""")
+
+    cursor.execute("""CREATE TABLE Patient(
+        Patient_ID INT PRIMARY KEY AUTO_INCREMENT,
+        Under_Treatment_of VARCHAR(40),
+        First_Name VARCHAR(15),
+        Last_Name VARCHAR(15),
+        Patient_Age INT,
+        Date_of_Birth DATE,
+        Patient_Gender VARCHAR(6),
+        Address VARCHAR(50),
+        Phone VARCHAR(11),
+        Insurance_ID INT,
+        Admission_Date DATE)""")
     
     cursor.execute("""CREATE TABLE Diagnosis(
         Patient_ID INT PRIMARY KEY AUTO_INCREMENT,
@@ -106,7 +111,7 @@ def all_tables():
 
 def describe_table():
     cursor = conn.cursor()
-    table = input("(HMS: Enter Name Of Table To Describe) > ")
+    table = input("(HMS: Enter Table Name To Describe (patient, doctor, diagnosis)) > ")
     cursor.execute(f"DESCRIBE {table}")
     table_desc = cursor.fetchall()
     columns = {} 
@@ -117,7 +122,7 @@ def describe_table():
 
 def insert_values():
     cursor = conn.cursor()
-    table = input("(HMS: Enter Table Name) > ")
+    table = input("(HMS: Enter Table Name (patient, doctor, diagnosis)) > ")
     entries = int(input("(HMS: Enter Number Of Entries) > "))
 
     print("[&] The Columns Of The Table is as Follows: ")
@@ -129,38 +134,73 @@ def insert_values():
     print(f"    {columns}")
 
     ent=[]
-    print("\n[&] If you don't have a value, type 'null'\n")
-    for i in range(entries):
+    n_ent=[]
+    print("\n[&] If you don't have a value, type 'null' (Except: DoB, Age, Insurance ID, Admission Date)\n")
+    for j in range(entries):
         entry = tuple(input("(HMS: Enter values) > ").split())
         if not entry:
             print("[!] Error: No value is entered")
             break
         else:
             ent.append(entry)
+            e=list(entry)
+            if table.upper() == "PATIENT":
+                e[3]=int(e[3])
+                e[8]=int(e[8])
 
-    cursor.executemany("INSERT INTO "+table+" VALUES(%s, %s, %s, %s, %s, %s)", ent)
+                # this is for inserting date(i dont know if there is any other way of it)
+                c=e[4]
+                d=c[0]+c[1]
+                d=int(d)
+                m=c[3]+c[4]
+                m=int(m)
+                y=c[6]+c[7]+c[8]+c[9]
+                y=int(y)
+                a=sq.Date(y, m, d)
+                e.remove(e[4])
+                e.insert(4, a)
+
+                k=e[9]
+                day=k[0]+k[1]
+                day=int(day)
+                month=k[3]+k[4]
+                month=int(month)
+                year=k[6]+k[7]+k[8]+k[9]
+                year=int(year)
+                b=sq.Date(year, month, day)
+                e.remove(e[9])
+                e.insert(9, b)
+                
+                e=tuple(e)
+                n_ent.append(e)
+
+                cursor.executemany("""INSERT INTO patient(Under_Treatment_of, First_Name, Last_Name,
+                              Patient_Age, Date_of_Birth, Patient_Gender,
+                               Address, Phone, Insurance_ID,
+                               Admission_Date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", n_ent)
+                
+                cursor.execute("""UPDATE patient
+                                SET Under_Treatment_of=NULL
+                                WHERE Under_Treatment_of='null'""")
+                cursor.execute("""UPDATE patient
+                                SET First_Name=NULL
+                                WHERE First_Name='null'""")
+                cursor.execute("""UPDATE patient
+                                SET Last_Name=NULL
+                                WHERE Last_Name='null'""")
+                cursor.execute("""UPDATE patient
+                                SET Patient_Gender=NULL
+                                WHERE Patient_Gender='null'""")
+                cursor.execute("""UPDATE patient
+                                SET Address=NULL
+                                WHERE Address='null'""")
+                cursor.execute("""UPDATE patient
+                                SET Phone=NULL
+                                WHERE Phone='null'""")
+            else:
+                print("[!] Error: Wrong Table Name")
     # '%s' is the no. of columns (you can change it according to the no. of columns)
 
-    # replacing null with NULL (this is the only way i could find)
-    cursor.execute(f"""UPDATE {table}
-                SET Name=NULL
-                WHERE Name='null'""")
-    cursor.execute(f"""UPDATE {table}
-                   SET Age=NULL
-                   WHERE Age='null'""")
-    cursor.execute(f"""UPDATE {table}
-                   SET Place=NULL
-                   WHERE Place='null'""")
-    cursor.execute(f"""UPDATE {table}
-                   SET a=NULL
-                   WHERE a='null'""")
-    cursor.execute(f"""UPDATE {table}
-                   SET b=NULL
-                   WHERE b='null'""")
-    cursor.execute(f"""UPDATE {table}
-                   SET c=NULL
-                   WHERE c='null'""")
-    
     commit=input("(Do you want to commit changes?) Y/n > ")
     if commit in ["y", "Y"] or commit.upper()=="YES":
         print("\n[+] New values got added into the database")
@@ -286,6 +326,6 @@ except sq.Error:
 
 # this KeyboardInterrupt error happens when u press ctrl+c
 except KeyboardInterrupt:
-    ki_error=input("Do you want to exit ? press any letter to exit: ")
+    ki_error=input("Do you want to exit ? press 'Enter' to exit: ")
     exit
     print()
