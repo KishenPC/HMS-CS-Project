@@ -174,7 +174,6 @@ def insert_values():
                 e=tuple(e)
                 n_ent=[]
                 n_ent.append(e)
-                print(n_ent)
 
                 cursor.executemany("""INSERT INTO patient(Under_Treatment_of, First_Name, Last_Name,
                               Patient_Age, Date_of_Birth, Patient_Gender,
