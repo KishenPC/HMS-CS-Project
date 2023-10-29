@@ -1,6 +1,10 @@
+# START
+
 # Imports
 import mysql.connector as sq
 from getpass import getpass
+# pip install tabulate
+from tabulate import tabulate
 import os
 
 # [!] - for errors
@@ -26,7 +30,6 @@ def create_tables():
 
     cursor.execute("""CREATE TABLE Patient(
         Patient_ID INT PRIMARY KEY AUTO_INCREMENT,
-        Under_Treatment_of VARCHAR(40),
         First_Name VARCHAR(15),
         Last_Name VARCHAR(15),
         Patient_Age INT,
@@ -39,7 +42,7 @@ def create_tables():
     
     cursor.execute("""CREATE TABLE Diagnosis(
         Patient_ID INT PRIMARY KEY AUTO_INCREMENT,
-        Patient_Diagnosis VARCHAR(100),
+        Patient_Diagnosis VARCHAR(40),
         Room_Number INT)""")
 
 def drop_tables():
@@ -122,7 +125,7 @@ def describe_table():
 
 def insert_values():
     cursor = conn.cursor()
-    table = input("(HMS: Enter Table Name (patient, doctor, diagnosis)) > ")
+    table = input("(HMS: Enter Table Name (patient, doctor)) > ")
     entries = int(input("(HMS: Enter Number Of Entries) > "))
 
     print("[&] The Columns Of The Table is as Follows: ")
@@ -134,10 +137,11 @@ def insert_values():
     print(f"    {columns}")
 
     ent=[]
-    print("\n[&] If you don't have a value, type 'null' (Except: DoB, Age, Insurance ID, Admission Date)")
+    print("\n[&] If you don't have a value, type 'null' (Except for: DoB, Age, Insurance ID, Admission Date)")
+    print("[&] After every value put a '/' (Example: abcd/efgh/123)")
     print("[&] The format for writing date is (dd,mm,yyyy)\n")
     for j in range(entries):
-        entry = tuple(input("(HMS: Enter values) > ").split())
+        entry = tuple(input("(HMS: Enter values) > ").split("/"))
         if not entry:
             print("[!] Error: No value is entered")
             break
@@ -145,11 +149,11 @@ def insert_values():
             ent.append(entry)
             e=list(entry)
             if table.upper() == "PATIENT":
-                e[3]=int(e[3])
-                e[8]=int(e[8])
+                e[2]=int(e[2])
+                e[7]=int(e[7])
 
                 # this is for inserting date(i dont know if there is any other way of it)
-                c=e[4]
+                c=e[3]
                 d=c[0]+c[1]
                 d=int(d)
                 m=c[3]+c[4]
@@ -157,10 +161,10 @@ def insert_values():
                 y=c[6]+c[7]+c[8]+c[9]
                 y=int(y)
                 a=sq.Date(y, m, d)
-                e.remove(e[4])
-                e.insert(4, a)
+                e.remove(e[3])
+                e.insert(3, a)
 
-                k=e[9]
+                k=e[8]
                 day=k[0]+k[1]
                 day=int(day)
                 month=k[3]+k[4]
@@ -168,17 +172,29 @@ def insert_values():
                 year=k[6]+k[7]+k[8]+k[9]
                 year=int(year)
                 b=sq.Date(year, month, day)
-                e.remove(e[9])
-                e.insert(9, b)
+                e.remove(e[8])
+                e.insert(8, b)
                 
                 e=tuple(e)
-                n_ent=[]
-                n_ent.append(e)
+                pd_ent=[]
+                pd_ent.append(e)
 
-                cursor.executemany("""INSERT INTO patient(Under_Treatment_of, First_Name, Last_Name,
+                cursor.executemany("""INSERT INTO patient(First_Name, Last_Name,
                               Patient_Age, Date_of_Birth, Patient_Gender,
                                Address, Phone, Insurance_ID,
-                               Admission_Date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", n_ent)
+                               Admission_Date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""", pd_ent)
+                # '%s' is the no. of columns (you can change it according to the no. of columns)
+                
+                patient_diagnosis = input("(HMS: Enter Patient Diagnosis) > ")
+                print("\n[&] If there is no room number, type 0")
+                patient_room = int(input("(HMS: Enter Patient Room (If Any)) > "))
+                if patient_room!=0:
+                    cursor.execute(f"INSERT INTO diagnosis(Patient_Diagnosis, Room_Number) VALUES {(patient_diagnosis, patient_room)}")
+                elif patient_room==0:
+                    cursor.execute(f"INSERT INTO diagnosis(Patient_Diagnosis, Room_Number) VALUES {(patient_diagnosis, patient_room)}")
+                    cursor.execute("""UPDATE diagnosis
+                                SET Room_Number=NULL
+                                WHERE Room_Number=0""")
                 
                 cursor.execute("""UPDATE patient
                                 SET Under_Treatment_of=NULL
@@ -198,9 +214,16 @@ def insert_values():
                 cursor.execute("""UPDATE patient
                                 SET Phone=NULL
                                 WHERE Phone='null'""")
+
+            elif table.upper() == "DOCTOR":
+                e[3]=int(e[3])
+                n_e=tuple(e)
+                d_ent=[]
+                d_ent.append(n_e)
+                cursor.executemany("""INSERT INTO doctor(First_Name, Last_Name, Specialization,
+                               Doctor_Age, Doctor_Gender, Address, Phone) VALUES (%s, %s, %s, %s, %s, %s, %s)""", d_ent)
             else:
                 print("[!] Error: Wrong Table Name")
-    # '%s' is the no. of columns (you can change it according to the no. of columns)
 
     commit=input("(Do you want to commit changes?) Y/n > ")
     if commit in ["y", "Y"] or commit.upper()=="YES":
@@ -229,15 +252,26 @@ def reset_db():
 
 # this display table looks shit (it is not even a table but i will try to change it)
 def show_table():
-    d_table = input("(HMS: Enter Table Name) > ")
+    s_table = input("(HMS: Enter Table Name (patient, doctor, diagnosis)) > ")
     cursor=conn.cursor()
-    cursor.execute("SELECT * FROM "+d_table)
+    cursor.execute("SELECT * FROM "+s_table)
     item=cursor.fetchall()
     if len(item)==0:
         print("[#] No values availabe (empty table)")
     else:
-        for i in item:
-            print(i)
+        """for i in item:
+            print(i)"""
+        if s_table.upper()=="PATIENT":
+            p_header=["Patient ID", "", "", "", "", "", "", "", "", ""]
+            print(tabulate(item, headers=p_header, tablefmt="double_grid"))
+        elif s_table.upper()=="DOCTOR":
+            d_header=["", "", "", "", "", "", "", ""]
+            print(tabulate(item, headers=d_header, tablefmt="double_grid"))
+        if s_table.upper()=="DIAGNOSIS":
+            diag_header=["", "", ""]
+            print(tabulate(item, headers=diag_header, tablefmt="double_grid"))
+        else:
+            print("[!] Error: Wrong Table Name")
 
 # Code
 print("\n"+"="*81)
@@ -309,9 +343,19 @@ try:
                 print("\n\tCommands\tDescription")
                 print("\t¯¯¯¯¯¯¯¯\t¯¯¯¯¯¯¯¯¯¯¯")
                 print("\thelp\t\tHelp menu")
+                print("\tbanner\t\tDisplays a banner")
                 print("\t?\t\talias for help")
                 print("\tclear\t\tClears the screen")
                 print("\texit\t\tExit the console")
+            elif action.upper()=="BANNER":
+                print("""
+  ____             _    _        ____                      
+ |  _ \ ___   ___ | | _(_) ___  | __ )  ___  __ _ _ __ ____
+ | |_) / _ \ / _ \| |/ / |/ _ \ |  _ \ / _ \/ _` | '__|_  /
+ |  __/ (_) | (_) |   <| |  __/ | |_) |  __/ (_| | |   / / 
+ |_|   \___/ \___/|_|\_\_|\___| |____/ \___|\__,_|_|  /___|
+                                                
+""")
             elif action.upper()=="CLEAR":
                 os.system("cls")
             elif action.upper()=="EXIT":
@@ -327,6 +371,8 @@ except sq.Error:
 
 # this KeyboardInterrupt error happens when u press ctrl+c
 except KeyboardInterrupt:
-    ki_error=input("Do you want to exit ? press 'Enter' to exit: ")
+    ki_error=input("Do you want to exit ? press 'Enter' or any key to exit: ")
     exit
     print()
+
+# END
