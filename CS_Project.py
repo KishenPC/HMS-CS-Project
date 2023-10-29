@@ -135,8 +135,8 @@ def insert_values():
 
     ent=[]
     n_ent=[]
-    print("\n[&] If you don't have a value, type 'null' (Except: DoB, Age, Insurance ID, Admission Date)\n")
-    print("[&] The format for date is dd,mm,yyyy")
+    print("\n[&] If you don't have a value, type 'null' (Except: DoB, Age, Insurance ID, Admission Date)")
+    print("[&] The format for date is (dd,mm,yyyy)\n")
     for j in range(entries):
         entry = tuple(input("(HMS: Enter values) > ").split())
         if not entry:
