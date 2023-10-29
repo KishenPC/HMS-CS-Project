@@ -134,9 +134,8 @@ def insert_values():
     print(f"    {columns}")
 
     ent=[]
-    n_ent=[]
     print("\n[&] If you don't have a value, type 'null' (Except: DoB, Age, Insurance ID, Admission Date)")
-    print("[&] The format for date is (dd,mm,yyyy)\n")
+    print("[&] The format for writing date is (dd,mm,yyyy)\n")
     for j in range(entries):
         entry = tuple(input("(HMS: Enter values) > ").split())
         if not entry:
@@ -173,7 +172,9 @@ def insert_values():
                 e.insert(9, b)
                 
                 e=tuple(e)
+                n_ent=[]
                 n_ent.append(e)
+                print(n_ent)
 
                 cursor.executemany("""INSERT INTO patient(Under_Treatment_of, First_Name, Last_Name,
                               Patient_Age, Date_of_Birth, Patient_Gender,
