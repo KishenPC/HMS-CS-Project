@@ -382,3 +382,48 @@ def select_data():
             else:
                 print("[!] Error: Wrong Table Name")    
         conn.commit()
+
+def update_data():
+    curs = conn.cursor()
+    table = input("(HMS: Table to Update (patient, doctor, diagnosis)) > ")
+    fmt="double_grid"
+    if table.upper()=="PATIENT":
+        p_header=["Patient_ID", "First_Name", "Last_Name", "Age", "Date_Of_Birth", "Gender", "Address", "Phone", "Insurance ID", "Admission_Date"]
+        print(tabulate(None, headers=p_header, tablefmt=fmt))
+    elif table.upper()=="DOCTOR":
+        doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Gender", "Address", "Phone"]
+        print(tabulate(None, headers=doc_header, tablefmt=fmt))
+    elif table.upper()=="DIAGNOSIS":
+        diag_header=["Patient_ID", "Diagnosis", "Room_Number"]
+        print(tabulate(None, headers=diag_header, tablefmt=fmt))
+    column_change = input("HMS: Enter Column Of Record To Update >")
+    column_value = input("HMS: Enter Value To Update To >")
+    change = f"{column_change} = {column_value}"
+    condition_count = int(input("HMS: Number Of Conditions > "))
+    if condition_count == 0:
+        confirm = input(f"This Will Modify Every Record In '{table}' Table. Commit? y/n")
+        if confirm.upper() == "Y":
+            cursor.execute(f"UPDATE {table} SET {change}")
+        else:
+            print("Change Reverted")
+    elif condition_count > 0:
+        conditions = ""
+        for i in range(condition_count):
+            condition_column = input(f"HMS: Enter Column To Use As Condition {i+1} > ")
+            condition_value = input(f"HMS: Enter Value To Search With Respect To Column Condition {i+1} > ")
+            if not condition_value.isdigit():
+                condition_value = f"'{condition_value}'"
+            conditions += f"{condition_column} = {condition_value}"
+            if condition_count == 1:
+                pass
+            elif i == (condition_count - 1):
+                pass
+            else:
+                conditions += " AND "
+        confirm = input(f"HMS: This Will Modify Every Record In '{table}' Table. Commit? y/n > ")
+        if confirm.upper() == "Y":
+            curs.execute(f"UPDATE {table} SET {change} WHERE {conditions}")
+            print("[+] Record Updated")
+        else:
+            print("[#] Change Reverted")
+    conn.commit()
