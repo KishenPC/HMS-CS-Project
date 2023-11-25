@@ -1,6 +1,4 @@
-######################Abin Krishna###########################
-
-# Function of HMS
+# Functions of HMS
 def create_tables():
     curs = conn.cursor()
 
@@ -109,9 +107,6 @@ def describe_table():
     for i in table_desc:
         columns.update({i[0]:i[1].upper()})
     print(f"    {columns}\n")
-
-def select_data():
-    pass
 
 def insert_values():
     curs = conn.cursor()
@@ -321,8 +316,69 @@ def show_table(s_table):
         else:
             print("[!] Error: Wrong Table Name")
 
-######################Abin Krishna###########################
-
-######################Kishen#################################
-#Put ur modified functions here (Inplace of this text)
-######################Kishen#################################
+def select_data():
+    table = input("(HMS: Enter Table Name (patient, doctor, diagnosis)) > ")
+    cursor=conn.cursor()
+    fmt="double_grid"
+    if table.upper()=="PATIENT":
+        p_header=["Patient_ID", "First_Name", "Last_Name", "Age", "Date_Of_Birth", "Gender", "Address", "Phone", "Insurance ID", "Admission_Date"]
+        print(tabulate(None, headers=p_header, tablefmt=fmt))
+    elif table.upper()=="DOCTOR":
+        doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Gender", "Address", "Phone"]
+        print(tabulate(None, headers=doc_header, tablefmt=fmt))
+    elif table.upper()=="DIAGNOSIS":
+        diag_header=["Patient_ID", "Diagnosis", "Room_Number"]
+        print(tabulate(None, headers=diag_header, tablefmt=fmt))
+    column_count = input("HMS: Columns to Display (Selective/All)> ")
+    if column_count.upper() == "SELECTIVE":
+        columns = input("HMS: Enter The Name Of The Columns Seperated By Comma > ")
+        condition_count = int(input("HMS: Number Of Conditions > "))
+        if condition_count == 0:
+            cursor.execute(f"SELECT {columns} FROM {table}")
+        elif condition_count > 0:
+            conditions = ""
+            for i in range(condition_count):
+                condition_column = input(f"HMS: Enter Column To Use As Condition {i+1} > ")
+                condition_value = input(f"HMS: Enter Value To Search With Respect To Column Condition {i+1} > ")
+                if not condition_value.isdigit():
+                    condition_value = f"'{condition_value}'"
+                conditions += f"{condition_column} = {condition_value}"
+                if condition_count == 1:
+                    pass
+                elif i == (condition_count - 1):
+                    pass
+                else:
+                    conditions += " AND "
+            print(f"SELECT {columns} FROM {table} WHERE {conditions}")
+            cursor.execute(f"SELECT {columns} FROM {table} WHERE {conditions}")
+            selected = cursor.fetchall()
+            p_header=[x for x in columns.split(",")]
+            print(p_header)
+            print(tabulate(selected, headers=p_header, tablefmt=fmt))
+                    
+        else:
+            print("[!] Invalid Number")
+                
+    elif column_count.upper() == "ALL":
+        print(f"SELECT * FROM {table}")
+        cursor.execute(f"SELECT * FROM {table}")
+        item=cursor.fetchall()
+        if len(item)==0:
+            print("\n[#] No values availabe (empty table)")
+        else:
+            fmt="double_grid"
+            if table.upper()=="PATIENT":
+                print("Collected Data:")
+                p_header=["Patient ID", "First Name", "Last Name", "Patient Age", "Date_Of_Birth", "Gender", "Address", "Phone", "Insurance_ID", "Admission_Date"]
+                print(tabulate(item, headers=p_header, tablefmt=fmt))
+            elif table.upper()=="DOCTOR":
+                print("Collected Data:")
+                doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Gender", "Address", "Phone"]
+                print(tabulate(item, headers=doc_header, tablefmt=fmt))
+            elif table.upper()=="DIAGNOSIS":
+                print("Collected Data:")
+                diag_header=["Patient_ID", "Diagnosis", "Room_Number"]
+                print(tabulate(item, headers=diag_header, tablefmt=fmt))
+            else:
+                print("[!] Error: Wrong Table Name")    
+        conn.commit()
