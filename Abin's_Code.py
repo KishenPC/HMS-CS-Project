@@ -329,7 +329,7 @@ def show_table(s_table):
             p_header=["Patient_ID", "First_Name", "Last_Name", "Patient_Age", "Date_of_Birth", "Sex", "Address", "Phone", "Insurance_ID", "Admission_Date"]
             print(tabulate(item, headers=p_header, tablefmt=fmt))
         elif s_table.upper()=="DOCTOR":
-            doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Sex", "Address", "Phone"]
+            doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Doctor_Age", "Sex", "Address", "Phone"]
             print(tabulate(item, headers=doc_header, tablefmt=fmt))
         elif s_table.upper()=="DIAGNOSIS":
             diag_header=["Patient_ID", "Patient_Diagnosis", "Room_Number", "Treated_By"]
