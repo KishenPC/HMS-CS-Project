@@ -2,9 +2,12 @@
 
 # Imports
 import mysql.connector as sq
-import datetime
+from getpass import getpass
+from tabulate import tabulate
+from datetime import datetime
+import msvcrt
+import time
 import os
-from tabulate import tabulate # pip install tabulate
 
 # [!] - for errors
 # [⁎] - for goods (i dont know what to write here)
@@ -12,6 +15,7 @@ from tabulate import tabulate # pip install tabulate
 # [+] - if something new is added
 # [&] - for showing info
 # [$] - for showing warning
+# [—] - for Unknown Command
 
 # Function of HMS
 def create_tables():
@@ -53,9 +57,11 @@ def drop_tables():
     for i in listed_tables: #Due to the fact that returned list of tables in the form [(t1,),(t2,)]
         for z in i:
             tables.append(z)
+        print(z)
+    print(i)
     drop_table = f"DROP TABLE {tables[0]}"
 
-    if len(tables) == 1:  
+    if len(tables) == 1:
         cursor.execute(drop_table)
     else:
         for i in tables[1:]:
@@ -82,12 +88,12 @@ def hosptial_db_setup():
 
     else:
         print("\n[!] Error: Found Incomplete Database")
-        reset = input("(Reset Database?) y/N > ")
-        if reset.upper() in ["YES", "Y"]:
+        reset = input("(Reset Database?) y/n > ")
+        if reset.upper() in ["YES","Y"]:
             drop_tables()
             create_tables()
 
-        elif reset.upper() in ["NO", "N"]:
+        elif reset.upper() in ["NO","N"]:
             print("\n[#] Please Swap to a Different Database")
             conn.close()
 
@@ -113,23 +119,20 @@ def all_tables():
 def describe_table():
     cursor = conn.cursor()
     table = input("(HMS: Enter Table Name To Describe (patient, doctor, diagnosis)) > ")
-    try:    
-        cursor.execute(f"DESCRIBE {table}")
-        table_desc = cursor.fetchall()
-        columns = {} 
-        print("\n[&] The Format Is, {Column Name : Data Type}")
-        for i in table_desc:
-            columns.update({i[0]:i[1].upper()})
-        print(f"    {columns}\n")
-    except:
-        print("\n[!] Error: Table Doesn't Exist")
+    cursor.execute(f"DESCRIBE {table}")
+    table_desc = cursor.fetchall()
+    columns = {} 
+    print("\n[&] The Format Is, {Column Name : Data Type}")
+    for i in table_desc:
+        columns.update({i[0]:i[1].upper()})
+    print(f"    {columns}\n")
 
 def insert_values():
     cursor = conn.cursor()
     table = input("(HMS: Enter Table Name (patient, doctor)) > ")
     entries = int(input("(HMS: Enter Number Of Entries) > "))
 
-    print("[&] The Columns Of The Table is as Follows: ")
+    print("\n[&] The Columns Of The Table is as Follows: ")
     cursor.execute(f"DESCRIBE {table}")
     table_desc = cursor.fetchall()
     columns = {} 
@@ -156,20 +159,50 @@ def insert_values():
 
                 DoAFormat = list(map(int,e[8].split("-")))
                 DoA = datetime.date(DoAFormat[0],DoAFormat[1],DoAFormat[2]) #Date Of Admission Formatting ( To Understand Better, Print DOAFormat)
-                    
-                patient_diagnosis = input("(HMS: Patient Diagnosis) > ")
-                print("\n[&] If there is no room number, type 0")
-                patient_room = int(input("(HMS: Patient Room (If Any)) > "))
-                treated_by = input("(HMS: Treated By) > ")
 
                 data = e[0:3] + [DoB,] + e[4:8] + [DoA,] #Combinaton of Values And Dates Into One List
                 cursor.execute("""INSERT INTO patient
                 (First_Name, Last_Name, Patient_Age, Date_of_Birth, 
-                Patient_Gender,Address, Phone, Insurance_ID, Admission_Date) 
+                Patient_Gender, Address, Phone, Insurance_ID, Admission_Date) 
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",data) #For 9 Columned Row Of Inputs
-                     
+
+                # This is required (Because when we dont have a value it enteres nothing in the db cell, it should enter NULL)
+                cursor.execute("""UPDATE patient
+                            SET First_Name=NULL
+                            WHERE First_Name=''""")
+                cursor.execute("""UPDATE patient
+                            SET Last_Name=NULL
+                            WHERE Last_Name=''""")
+                cursor.execute("""UPDATE patient
+                            SET Patient_Age=NULL
+                            WHERE Patient_Age=''""")
+                cursor.execute("""UPDATE patient
+                            SET Patient_Gender=NULL
+                            WHERE Patient_Gender=''""")
+                cursor.execute("""UPDATE patient
+                            SET Address=NULL
+                            WHERE Address=''""")
+                cursor.execute("""UPDATE patient
+                            SET Phone=NULL
+                            WHERE Phone=''""")
+                cursor.execute("""UPDATE patient
+                            SET Insurance_ID=NULL
+                            WHERE Insurance_ID=''""")
+
+                patient_diagnosis = input("(HMS: Patient diagnosed with) > ")
+                print("\n[&] If there is no room number, type 0\n")
+                patient_room = int(input("(HMS: Patient Room (If Any)) > "))
+                treated_by = input("\n(HMS: Treated By) > ")
+                    
                 if patient_room != 0:
                     cursor.execute(f"INSERT INTO diagnosis(Patient_Diagnosis, Room_Number, Treated_By) VALUES {patient_diagnosis, patient_room, treated_by}")
+                    cursor.execute("""UPDATE diagnosis
+                            SET Patient_Diagnosis=NULL
+                            WHERE Patient_Diagnosis=''""")
+                    cursor.execute("""UPDATE diagnosis
+                            SET Treated_By=NULL
+                            WHERE Treated_By=''""")
+
                 elif patient_room == 0:
                     data = (patient_diagnosis, None, treated_by)
                     cursor.execute(f"INSERT INTO diagnosis(Patient_Diagnosis, Room_Number, Treated_By) VALUES (%s, %s, %s)", data)
@@ -182,7 +215,7 @@ def insert_values():
                 VALUES (%s, %s, %s, %s, %s, %s, %s)""",data)
 
     commit=input("(Do you want to commit changes?) Y/n > ")
-    if commit in ["YES", "Y"]:
+    if commit.upper() in ["YES", "Y"]:
         print("\n[+] New values got added into the database")
         conn.commit()
     elif commit.upper() in ["NO", "N"]:
@@ -191,43 +224,41 @@ def insert_values():
         print("\n[!] Error: Wrong input")
 
 def reset_db():
-    conn_cursor = conn.cursor()
-    print("\n[$] This will result in loss of all data present in the Database Tables")
-    reset = input("Proceed With Reset? (y/n) > ")
-    if reset.upper() in ("YES","Y"):
-        #
-        drop_tables()
-        create_tables()
-        #
-        print("\n[+] Successful Database Reset ")
-        all_tables()
-        
-    elif reset.upper() in ("NO","N"):
-        print("\n[#] Database Reset Cancelled")
-
+    cursor=conn.cursor()
+    cursor.execute("DELETE FROM Patient")
+    cursor.execute("DELETE FROM Doctor")
+    cursor.execute("DELETE FROM Diagnosis")
+    
+    print("\n[$] This will result in loss of all data present in the Database Tables\n")
+    reset=input("(Do you want to commit changes?) Y/n > ")
+    if reset.upper() in ["YES", "Y"]:
+        print("\n[+] Database Tables got cleared")
+        conn.commit()
+    elif reset.upper() in ["NO", "N"]:
+        print("\n[#] No changes took place")
     else:
         print("\n[!] Error: Wrong input")
 
-# this display table looks shit (it is not even a table but i will try to change it)
 def show_table():
     s_table = input("(HMS: Enter Table Name (patient, doctor, diagnosis)) > ")
     cursor=conn.cursor()
     cursor.execute("SELECT * FROM "+s_table)
     item=cursor.fetchall()
-    if len(item) == 0:
-        print("[#] No values availabe (empty table)")
+    if len(item)==0:
+        print("\n[#] No values availabe (empty table)")
     else:
         """for i in item:
             print(i)"""
+        fmt="double_grid"
         if s_table.upper()=="PATIENT":
-            p_header=["Patient ID", "First Name", "Last Name", "Age", "Date Of Birth", "Sex", "Address", "Phone", "Insurance ID", "Date Of Admission"]
-            print(tabulate(item, headers=p_header, tablefmt="double_grid"))
+            p_header=["Patient ID", "First Name", "Last Name", "Patient Age", "DoB", "Gender", "Address", "Phone", "Insurance ID", "Admission Date"]
+            print(tabulate(item, headers=p_header, tablefmt=fmt))
         elif s_table.upper()=="DOCTOR":
-            d_header=["Doctor ID", "First Name", "Last Name", "Specialization", "Age", "Sex", "Address", "Phone"]
-            print(tabulate(item, headers=d_header, tablefmt="double_grid"))
-        if s_table.upper()=="DIAGNOSIS":
-            diag_header=["Patient ID", "Diagnosis", "Room Number", "Treated By"]
-            print(tabulate(item, headers=diag_header, tablefmt="double_grid"))
+            doc_header=["Doctor ID", "First Name", "Last Name", "Specialization", "Age", "Gender", "Address", "Phone"]
+            print(tabulate(item, headers=doc_header, tablefmt=fmt))
+        elif s_table.upper()=="DIAGNOSIS":
+            diag_header=["Patient ID", "Patient Diagnosis", "Room Number"]
+            print(tabulate(item, headers=diag_header, tablefmt=fmt))
         else:
             print("[!] Error: Wrong Table Name")
 
@@ -237,7 +268,15 @@ print("  [Project] Hospital Management System")
 print("="*81)
 
 print("  [Credits] Abin Krishna, Kishen PC, Vaishak")
-print("="*81)
+print("="*81+"""
+            
+                       ██╗  ██╗    ███╗   ███╗    ███████╗
+                       ██║  ██║    ████╗ ████║    ██╔════╝
+                       ███████║    ██╔████╔██║    ███████╗
+                       ██╔══██║    ██║╚██╔╝██║    ╚════██║
+                       ██║  ██║    ██║ ╚═╝ ██║    ███████║
+                       ╚═╝  ╚═╝    ╚═╝     ╚═╝    ╚══════╝
+""")
 
 try:
     print("\n\t\t       Enter SQL Server Connection Details\n")
@@ -246,11 +285,14 @@ try:
     host = input("\n(HMS: Hostname) > ")
     user = input("(HMS: Username) > ")
     db = input("(HMS: Database Name) > ")
-    passwd = input("(HMS: Database Connection Password) > ")
+    passwd = getpass("(HMS: Database Connection Password) > ")
+    # By using "getpass" whenever u type the password it will be hidden in the terminal
     
     conn = sq.connect(host=host, username=user , database=db, passwd=passwd)
     
     if conn.is_connected():
+        print("\nStarting the Hospital Management System Console.../")
+        time.sleep(1.5)
         print(f"\n[⁎] Connected to {host}")
         print(f"[⁎] Welcome To The {db} Databse Interface\n")
         print("List of Tables:-")
@@ -258,60 +300,96 @@ try:
         all_tables()
 
         while conn.is_connected():
-            print("""\nDatabase Queries:-
+            print("""\nDatabase Commands:-
 \t1. Describe Table
 \t2. Select Data
 \t3. Insert Value(s)
-\t4. Show table
-\t5. Reset Database
-\t6. Disconnect\n""")
+\t4. Remove Value(s)
+\t5. Show Table
+\t6. Reset Database
+\t7. Disconnect\n""")
 
             action = input("(HMS: Enter Command) > ")
             if action.upper() in ("DESCRIBE TABLE", "1"):
                 describe_table()
             elif action.upper() in ("SELECT DATA", "SELECT", "2"):
                 pass
-            elif action.upper() in ("INSERT VALUES", "INSERT", "3"):
+            elif action.upper() in ("INSERT VALUES", "INSERT VALUE", "INSERT", "3"):
                 insert_values()
-            elif action.upper() in ("SHOW TABLE", "4"):
+            elif action.upper() in ("REMOVE VALUES", "REMOVE VALUE", "REMOVE", "4"):
+                remove_values()
+            elif action.upper() in ("SHOW TABLE", "5"):
                 show_table()
-            elif action.upper() in ("RESET DATABASE", "RESET", "5"):
+            elif action.upper() in ("RESET DATABASE", "RESET", "6"):
                 reset_db()
-            elif action.upper() in ("DISCONNECT", "6"):
-                con_quit=input("Do you want to exit (close connection) ? press 'q' to exit: ")
-                if con_quit.upper()==["QUIT"] or con_quit in ["q", "Q"]:
+            elif action.upper() in ("DISCONNECT", "7"):
+                con_quit=input("Do you wish to Disconnect? Enter 'q' to exit: ")
+                if con_quit.upper() in ["QUIT", "Q"]:
                     conn.close()
                     print()
                 else:
                     print("Type 'q' to exit")
-            
+
             # Hidden Commands 💀
-            elif action.upper() in ("HELP", "?"):
-                print("\nMain Commands")
-                print("¯¯¯¯¯¯¯¯¯¯¯¯¯")
-                print("\n\tCommands\tDescription")
-                print("\t¯¯¯¯¯¯¯¯\t¯¯¯¯¯¯¯¯¯¯¯")
+            elif action.upper() in ["HELP", "?"]:
+                print("\n Main Commands")
+                print("¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯")
+                print("\n\t Commands\t Description")
+                print("\t¯¯¯¯¯¯¯¯¯¯\t¯¯¯¯¯¯¯¯¯¯¯¯¯")
                 print("\thelp\t\tHelp menu")
                 print("\tbanner\t\tDisplays a banner")
                 print("\t?\t\talias for help")
                 print("\tclear\t\tClears the screen")
-                print("\texit\t\tExit the console")
-            elif action.upper() in ("CLEAR"):
+                print("""\tcolor\t\tChanges the color of the terminal\n
+                        1 = Aqua        2 = Purple
+                        3 = Blue        4 = Green
+                        5 = White""")
+                print("\n\texit\t\tExit the console")
+            elif action.upper() == "BANNER":
+                print("""
+
+██╗  ██╗    ███╗   ███╗    ███████╗
+██║  ██║    ████╗ ████║    ██╔════╝
+███████║    ██╔████╔██║    ███████╗
+██╔══██║    ██║╚██╔╝██║    ╚════██║
+██║  ██║    ██║ ╚═╝ ██║    ███████║
+╚═╝  ╚═╝    ╚═╝     ╚═╝    ╚══════╝
+                                                                             
+""")
+            elif action.upper()=="CLEAR":
                 os.system("cls")
-            elif action.upper() in ("EXIT"):
+            elif action.upper()=="EXIT":
                 conn.close()
                 print()
+
+            # Terminal Color (BTW it looks so good)
+            elif action.upper()=="COLOR 1":
+                os.system("color 3")
+            elif action.upper()=="COLOR 2":
+                os.system("color 5")
+            elif action.upper()=="COLOR 3":
+                os.system("color 1")
+            elif action.upper()=="COLOR 4":
+                os.system("color 2")
+            elif action.upper()=="COLOR 5":
+                os.system("color 7")
             
             else:
-                print("[!] Error: Wrong input")
+                print("[—] Unknown command")
 
-except sq.Error:
-    print("\n[!] Error: Connection Failed!")
-    print("[!] Error: Make sure you have entered the right credentials for the database connection\n")
+# This works only if the credentials are wrong
+except sq.Error as err:
+    if err.errno==sq.errorcode.ER_ACCESS_DENIED_ERROR:
+        print("\n[!] Access Denied")
+        print("[!] Make sure you have entered the right credentials for the database connection\n")
+    else:
+        print("[!] There was an Error")
 
 # this KeyboardInterrupt error happens when u press ctrl+c
 except KeyboardInterrupt:
-    ki_error=input("Do you want to exit ? press 'Enter' or any key to exit: ")
+    print("Press any key to exit...")
+    # ↓ this line of code takes any keystroke
+    msvcrt.getch()
     exit
     print()
 
