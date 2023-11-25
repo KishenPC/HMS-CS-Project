@@ -25,7 +25,7 @@ def create_tables():
         First_Name VARCHAR(15),
         Last_Name VARCHAR(15),
         Specialization VARCHAR(30),
-        Doctor_Age INT,
+        Age INT,
         Sex VARCHAR(6),
         Address VARCHAR(50),
         Phone VARCHAR(11))""")
@@ -34,13 +34,13 @@ def create_tables():
         Patient_ID INT PRIMARY KEY AUTO_INCREMENT,
         First_Name VARCHAR(15),
         Last_Name VARCHAR(15),
-        Patient_Age INT,
+        Age INT,
         Date_of_Birth DATE,
         Sex VARCHAR(6),
         Address VARCHAR(50),
         Phone VARCHAR(11),
         Insurance_ID INT,
-        Admission_Date DATE)""")
+        Date_Of_Admission DATE)""")
     
     curs.execute("""CREATE TABLE Diagnosis(
         Patient_ID INT PRIMARY KEY AUTO_INCREMENT,
@@ -118,188 +118,383 @@ def all_tables():
 def describe_table():
     curs = conn.cursor()
     table = input("(HMS: Enter Table Name To Describe (patient, doctor, diagnosis)) > ")
-    curs.execute(f"DESCRIBE {table}")
-    table_desc = curs.fetchall()
-    columns = {} 
-    print("\n[&] The Format Is, {Column Name : Data Type}")
-    for i in table_desc:
-        columns.update({i[0]:i[1].upper()})
-    print(f"    {columns}\n")
+    if table.upper() in ["PATIENT", "DOCTOR", "DIAGNOSIS"]:
+        curs.execute(f"DESCRIBE {table}")
+        table_desc = curs.fetchall()
+        columns = {} 
+        print("\n[&] The Format Is, {Column Name : Data Type}")
+        for i in table_desc:
+            columns.update({i[0]:i[1].upper()})
+        print(f"    {columns}\n")
+    else:
+        print("\n[!] Error: Wrong Table Name")
 
 def select_data():
-    pass
+    # I made the header as an item of the table and remove the header from tabulate so it will look like column names only
+    curs=conn.cursor()
+    table = input("(HMS: Enter Table Name (patient, doctor, diagnosis)) > ")
+    if table.upper() in ["PATIENT", "DOCTOR", "DIAGNOSIS"]:
+        curs.execute("SELECT * FROM "+table)
+        item=curs.fetchall()
+        fmt="double_grid"
+        
+        if table.upper()=="PATIENT":
+            p_header=["Patient_ID", "First_Name", "Last_Name", "Age", "Date_Of_Birth", "Sex", "Address", "Phone", "Insurance ID", "Date_Of_Admission"]
+            print()
+            print(tabulate([p_header], tablefmt=fmt))
+            print()
+        
+        elif table.upper()=="DOCTOR":
+            doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Sex", "Address", "Phone"]
+            print()
+            print(tabulate([doc_header], tablefmt=fmt))
+            print()
+        
+        elif table.upper()=="DIAGNOSIS":
+            diag_header=["Patient_ID", "Diagnosis", "Room_Number"]
+            print()
+            print(tabulate([diag_header], tablefmt=fmt))
+            print()
+        
+        if len(item)==0:
+            print("[#] No values availabe (empty table)\n")
+        
+        elif len(item) != 0:
+            column_count = input("(HMS: Columns to Display (Selective/All)) > ")
+            if column_count.upper() == "SELECTIVE":
+                try:
+                    columns = input("(HMS: Enter The Name Of The Columns Seperated By Comma) > ")
+                    try:
+                        condition_count = int(input("(HMS: Number Of Conditions) > "))
+                        
+                        if condition_count == 0:
+                            curs.execute(f"SELECT {columns} FROM {table}")
+                            selected = curs.fetchall()
+                            print()
+                            p_header=[x for x in columns.split(",")]
+                            print(p_header)
+                            print(tabulate(selected, headers=p_header, tablefmt=fmt))
+                            print()
+                        
+                        elif condition_count > 0:
+                            conditions = ""
+                            
+                            for i in range(condition_count):
+                                condition_column = input(f"(HMS: Enter Column To Use As Condition {i+1}) > ")
+                                condition_value = input(f"(HMS: Enter Value To Search With Respect To Column Condition {i+1}) > ")
+                                
+                                if not condition_value.isdigit():
+                                    condition_value = f"'{condition_value}'"
+                                conditions += f"{condition_column} = {condition_value}"
+                                
+                                if condition_count == 1:
+                                    pass
+                                elif i == (condition_count - 1):
+                                    pass
+                                else:
+                                    conditions += " AND "
+                            
+                            print("\n"+f"SELECT {columns} FROM {table} WHERE {conditions}")
+                            curs.execute(f"SELECT {columns} FROM {table} WHERE {conditions}")
+                            selected = curs.fetchall()
+                            p_header=[x for x in columns.split(",")]
+                            print(p_header)
+                            print()
+                            print(tabulate(selected, headers=p_header, tablefmt=fmt))
+
+                        else:
+                            print("\n[!] Error: Invalid Number")
+                    except ValueError:
+                        print("\n[!] Error: Enter the correct Value\n")
+                
+                except sq.ProgrammingError:
+                    print("\n[!] Error: Enter the correct Value\n")
+        
+            elif column_count.upper() == "ALL":
+                print()
+                print(f"SELECT * FROM {table}")
+                show_table(table)
+                print()
+
+            else:
+                print("\n[!] Error: Wrong Command\n")
+    else:
+        print("\n[!] Error: Wrong Table Name\n")
 
 def insert_values():
     curs = conn.cursor()
     table = input("(HMS: Enter Table Name (patient, doctor)) > ")
-    entries = int(input("(HMS: Enter Number Of Entries) > "))
+    try:
+        entries = int(input("(HMS: Enter Number Of Entries) > "))
+        try:
+            print("\n[&] The Columns Of The Table is as Follows: ")
+            curs.execute(f"DESCRIBE {table}")
+            table_desc = curs.fetchall()
+            columns = {} 
+            for i in table_desc:
+                if i != table_desc[0]: #Excluding Entry of ID Of Main Tables To Implement AUTO_INCREMENT
+                    columns.update({i[0]:i[1].upper()})
+            print(f"    {columns}")
 
-    print("\n[&] The Columns Of The Table is as Follows: ")
-    curs.execute(f"DESCRIBE {table}")
-    table_desc = curs.fetchall()
-    columns = {} 
-    for i in table_desc:
-        if i != table_desc[0]: #Excluding Entry of ID Of Main Tables To Implement AUTO_INCREMENT
-            columns.update({i[0]:i[1].upper()})
-    print(f"    {columns}")
-
-    print("\n[&] After every value put a '/' (Example: abcd/efgh/123)")
-    print("[&] If you don't have a value, Leave Empty (Example: abc/def//123)")
-    print("[&] The format for writing date is (yyyymmdd)\n")
-    for j in range(entries):
-        entry = tuple(input("(HMS: Enter values) > ").split("/"))
-        
-        if not entry:
-            print("[!] Error: No value is entered")
-            break
-        else:
-            if table.upper() == "PATIENT":
-                e=list(entry) #Forms a List Of Entered Values
-
-                curs.execute("""INSERT INTO patient
-                (First_Name, Last_Name, Patient_Age, Date_of_Birth, 
-                Sex, Address, Phone, Insurance_ID, Admission_Date) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""", e) #For 9 Columned Row Of Inputs
-
-                # This is required (Because when we dont have a value it enteres nothing in the db cell, it should enter NULL)
-                curs.execute("""UPDATE patient
-                            SET First_Name=NULL
-                            WHERE First_Name=''""")
-                curs.execute("""UPDATE patient
-                            SET Last_Name=NULL
-                            WHERE Last_Name=''""")
-                curs.execute("""UPDATE patient
-                            SET Patient_Age=NULL
-                            WHERE Patient_Age=''""")
-                curs.execute("""UPDATE patient
-                            SET Sex=NULL
-                            WHERE Sex=''""")
-                curs.execute("""UPDATE patient
-                            SET Address=NULL
-                            WHERE Address=''""")
-                curs.execute("""UPDATE patient
-                            SET Phone=NULL
-                            WHERE Phone=''""")
-                curs.execute("""UPDATE patient
-                            SET Insurance_ID=NULL
-                            WHERE Insurance_ID=''""")
-
-                patient_diagnosis = input("(HMS: Patient diagnosed with) > ")
-                print("\n[&] If there is no room number, type 0\n")
-                patient_room = int(input("(HMS: Patient Room (If Any)) > "))
-                treated_by = input("\n(HMS: Treated By) > ")
+            print("\n[&] After every value put a '/' (Example: abcd/efgh/123)")
+            print("[&] If you don't have a value, Leave Empty (Example: abc/def//123)")
+            print("[&] The format for writing date is (yyyymmdd)")
+            for j in range(entries):
+                try:
+                    entry = tuple(input("\n(HMS: Enter values) > ").split("/"))
                     
-                if patient_room != 0:
-                    curs.execute(f"INSERT INTO diagnosis(Patient_Diagnosis, Room_Number, Treated_By) VALUES {patient_diagnosis, patient_room, treated_by}")
-                    curs.execute("""UPDATE diagnosis
-                            SET Patient_Diagnosis=NULL
-                            WHERE Patient_Diagnosis=''""")
-                    curs.execute("""UPDATE diagnosis
-                            SET Treated_By=NULL
-                            WHERE Treated_By=''""")
+                    if not entry:
+                        print("[!] Error: No value is entered")
+                        break
+                    else:
+                        if table.upper() == "PATIENT":
+                            e=list(entry) #Forms a List Of Entered Values
 
-                elif patient_room == 0:
-                    data_ = (patient_diagnosis, None, treated_by)
-                    curs.execute(f"INSERT INTO diagnosis(Patient_Diagnosis, Room_Number, Treated_By) VALUES (%s, %s, %s)", data_)
+                            curs.execute("""INSERT INTO patient
+                            (First_Name, Last_Name, Age, Date_of_Birth, 
+                            Sex, Address, Phone, Insurance_ID, Date_Of_Admission) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""", e) #For 9 Columned Row Of Inputs
 
-            elif table.upper() == "DOCTOR":
-                data=list(entry)
-                curs.execute("""INSERT INTO doctor
-                (First_Name, Last_Name, Specialization,
-                Doctor_Age, Sex, Address, Phone)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)""",data)
+                            # This is required (Because when we dont have a value it enteres nothing in the db cell, it should enter NULL)
+                            curs.execute("""UPDATE patient
+                                        SET First_Name=NULL
+                                        WHERE First_Name=''""")
+                            curs.execute("""UPDATE patient
+                                        SET Last_Name=NULL
+                                        WHERE Last_Name=''""")
+                            curs.execute("""UPDATE patient
+                                        SET Age=NULL
+                                        WHERE Age=''""")
+                            curs.execute("""UPDATE patient
+                                        SET Sex=NULL
+                                        WHERE Sex=''""")
+                            curs.execute("""UPDATE patient
+                                        SET Address=NULL
+                                        WHERE Address=''""")
+                            curs.execute("""UPDATE patient
+                                        SET Phone=NULL
+                                        WHERE Phone=''""")
+                            curs.execute("""UPDATE patient
+                                        SET Insurance_ID=NULL
+                                        WHERE Insurance_ID=''""")
 
-    commit=input("(Do you want to commit changes?) Y/n > ")
-    if commit.upper() in ["YES", "Y"]:
-        print("\n[+] New values got added into the database")
-        conn.commit()
-    elif commit.upper() in ["NO", "N"]:
-        print("\n[#] No changes took place")
+                            patient_diagnosis = input("(HMS: Patient diagnosed with) > ")
+                            print("\n[&] If there is no room number, type 0\n")
+                            patient_room = int(input("(HMS: Patient Room (If Any)) > "))
+                            treated_by = input("\n(HMS: Treated By) > ")
+                                
+                            if patient_room != 0:
+                                curs.execute(f"INSERT INTO diagnosis(Patient_Diagnosis, Room_Number, Treated_By) VALUES {patient_diagnosis, patient_room, treated_by}")
+                                curs.execute("""UPDATE diagnosis
+                                        SET Patient_Diagnosis=NULL
+                                        WHERE Patient_Diagnosis=''""")
+                                curs.execute("""UPDATE diagnosis
+                                        SET Treated_By=NULL
+                                        WHERE Treated_By=''""")
+
+                            elif patient_room == 0:
+                                data_ = (patient_diagnosis, None, treated_by)
+                                curs.execute(f"INSERT INTO diagnosis(Patient_Diagnosis, Room_Number, Treated_By) VALUES (%s, %s, %s)", data_)
+
+                        elif table.upper() == "DOCTOR":
+                            data=list(entry)
+                            curs.execute("""INSERT INTO doctor
+                            (First_Name, Last_Name, Specialization,
+                            Age, Sex, Address, Phone)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)""",data)
+                    
+                    commit=input("(Do you want to commit changes?) Y/n > ")
+                    if commit.upper() in ["YES", "Y"]:
+                        print("\n[+] Database Updated")
+                        conn.commit()
+                    elif commit.upper() in ["NO", "N"]:
+                        print("\n[#] No changes took place")
+                    else:
+                        print("\n[!] Error: Wrong input")
+                        
+                except sq.ProgrammingError:
+                    print("\n[!] Error: Enter the correct Value")
+
+        except ValueError:
+            print("\n[!] Error: Enter the correct Value\n")
+    except ValueError:
+        print("\n[!] Error: Enter the correct Value")
+
+def update_data():
+    curs=conn.cursor()
+    table = input("(HMS: Enter Table Name (patient, doctor, diagnosis)) > ")
+    if table.upper() in ["PATIENT", "DOCTOR", "DIAGNOSIS"]:
+        curs.execute("SELECT * FROM "+table)
+        item=curs.fetchall()
+        
+        if len(item)==0:
+            print("\n[#] No values available (Empty table)\n")
+
+        elif len(item)!=0:
+            fmt="double_grid"
+            if table.upper()=="PATIENT":
+                p_header=["Patient_ID", "First_Name", "Last_Name", "Age", "Date_Of_Birth", "Sex", "Address", "Phone", "Insurance ID", "Date_Of_Admission"]
+                print()
+                print(tabulate([p_header], tablefmt=fmt))
+                print()
+            
+            elif table.upper()=="DOCTOR":
+                doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Sex", "Address", "Phone"]
+                print()
+                print(tabulate([doc_header], tablefmt=fmt))
+                print()
+            
+            elif table.upper()=="DIAGNOSIS":
+                diag_header=["Patient_ID", "Diagnosis", "Room_Number"]
+                print()
+                print(tabulate([diag_header], tablefmt=fmt))
+                print()
+
+            try:
+                column_change = input("(HMS: Enter Column Of Record To Update) > ")
+                column_value = input("(HMS: Enter Value To Update To) > ")
+                change = f"{column_change} = '{column_value}'"
+            
+                print(f"\n[&] If there are no conditions the whole '{column_change}' column will be changed to '{column_value}'")
+                
+                try:
+                    condition_count = int(input("(HMS: Number Of Conditions) > "))
+                    curs.execute(f"UPDATE {table} SET {change}")
+                
+                    if condition_count == 0:
+                        confirm = input(f"\n(HMS: This Will Modify Every Record In '{table}' Table) Commit? Y/n > ")
+                        if confirm.upper() in ["YES", "Y"]:
+                            conn.commit()
+                            print("[+] Database Updated")
+                        elif confirm.upper() in ["NO", "N"]:
+                            print("[#] Change Reverted")
+                        else:
+                            print("\n[!] Error: Wrong input")
+                    
+                    elif condition_count > 0:
+                        conditions = ""
+                        for i in range(condition_count):
+                            condition_column = input(f"(HMS: Enter Column To Use As Condition {i+1}) > ")
+                            condition_value = input(f"(HMS: Enter Value To Search With Respect To Column Condition {i+1}) > ")
+                            
+                            if not condition_value.isdigit():
+                                condition_value = f"{condition_value}"
+                            conditions += f"{condition_column} = '{condition_value}'"
+                            
+                            if condition_count == 1:
+                                pass
+                            elif i == (condition_count - 1):
+                                pass
+                            else:
+                                conditions += " AND "
+
+                        curs.execute(f"UPDATE {table} SET {change} WHERE {conditions}")
+                        confirm = input(f"\n(HMS: This Will Modify Every Record In '{table}' Table) Commit? Y/n > ")
+                        if confirm.upper() in ["YES", "Y"]:
+                            conn.commit()
+                            print("\n[+] Database Updated\n")
+                        elif confirm.upper() in ["NO", "N"]:
+                            print("\n[#] Change Reverted\n")
+                        else:
+                            print("\n[!] Error: Wrong input")
+                    else:
+                        print("Something went Wrong")
+                    
+                except ValueError:
+                    print("\n[!] Error: Number of conditions must be interger\n")
+                    
+            except ValueError:
+                print("\n[!] Error: Type the Values correctly\n")
+            except sq.ProgrammingError:
+                print("\n[!] Error: Enter the values correctly\n")
     else:
-        print("\n[!] Error: Wrong input")
+        print("\n[!] Error: Wrong Table Name\n")
 
 def remove_value():
     curs=conn.cursor()
     tab=input("(HMS: Enter table name) > ")
-    show_table(s_table=tab)
+    if tab.upper() in ["PATIENT", "DOCTOR", "DIAGNOSIS"]:
+        show_table(s_table=tab)
 
-    print("\n•—————————————————————————————•")
-    print("   Methods of removing Value")
-    print("   1. A specific value")
-    print("   2. Complete row")
-    print("•—————————————————————————————•\n")
+        print("\n•—————————————————————————————•")
+        print("   Methods of removing Value")
+        print("   1. A specific value")
+        print("   2. Complete row")
+        print("•—————————————————————————————•\n")
 
-    # PATIENT
-    curs.execute("SELECT * FROM "+tab)
-    item=curs.fetchall()
-    if len(item)==0:
-        print("[#] No values availabe (empty table)\n")
-        remove_value()
+        curs.execute("SELECT * FROM "+tab)
+        item=curs.fetchall()
+        if len(item)==0:
+            print("[#] No values availabe (empty table)\n")
+            remove_value()
+        elif len(item)!=0:
+            # PATIENT
+            if tab.upper()=="PATIENT":
+                inp_pat=input("(HMS: Choose an Option) > ")
+                if inp_pat=="1" or inp_pat.upper()=="A SPECIFIC VALUE":
+                    row_pat=input("(HMS: Enter the Patient ID) > ")
+                    column_pat=input("(HMS: Enter the Column Name) > ")
 
-    elif tab.upper()=="PATIENT":
-        inp_pat=input("(HMS: Choose an Option) > ")
-        if inp_pat=="1" or inp_pat.upper()=="A SPECIFIC VALUE":
-            row_pat=input("(HMS: Enter the Patient ID) > ")
-            column_pat=input("(HMS: Enter the Column Name) > ")
+                    curs.execute(f"UPDATE {tab} SET {column_pat}=NULL WHERE Patient_ID={row_pat}")
+                    show_table(s_table=tab)
 
-            curs.execute(f"UPDATE {tab} SET {column_pat}=NULL WHERE Patient_ID={row_pat}")
-            show_table(s_table=tab)
+                elif inp_pat=="2" or inp_pat.upper()=="COMPLETE ROW":
+                    rowp=input("(HMS: Enter the Patient ID you want to remove) > ")
+                    curs.execute(f"DELETE FROM {tab} WHERE Patient_ID={rowp}")
+                    show_table(s_table=tab)
 
-        elif inp_pat=="2" or inp_pat.upper()=="COMPLETE ROW":
-            rowp=input("(HMS: Enter the Patient ID you want to remove) > ")
-            curs.execute(f"DELETE FROM pat WHERE Patient_ID={rowp}")
-            show_table(s_table=tab)
+                else:
+                    print("[#] Wrong Option")
+            
+            # DOCTOR
+            elif tab.upper()=="DOCTOR":
+                inp_doc=input("(HMS: Choose an Option) > ")
+                if inp_doc=="1" or inp_doc.upper()=="A SPECIFIC VALUE":
+                    row_doc=input("(HMS: Enter the Doctor ID) > ")
+                    column_doc=input("(HMS: Enter the Column Name) > ")
 
-        else:
-            print("[#] Wrong Option")
-    
-    # DOCTOR
-    elif tab.upper()=="DOCTOR":
-        inp_doc=input("(HMS: Choose an Option) > ")
-        if inp_doc=="1" or inp_doc.upper()=="A SPECIFIC VALUE":
-            row_doc=input("(HMS: Enter the Doctor ID) > ")
-            column_doc=input("(HMS: Enter the Column Name) > ")
+                    curs.execute(f"UPDATE {tab} SET {column_doc}=NULL WHERE Doctor_ID={row_doc}")
+                    show_table(s_table=tab)
 
-            curs.execute(f"UPDATE {tab} SET {column_doc}=NULL WHERE Doctor_ID={row_doc}")
-            show_table(s_table=tab)
+                elif inp_doc=="2" or inp_doc.upper()=="COMPLETE ROW":
+                    _rowD=input("(HMS: Enter the Patient ID you want to remove) > ")
+                    curs.execute(f"DELETE FROM {tab} WHERE Doctor_ID={_rowD}")
+                    show_table(s_table=tab)
+                
+                else:
+                    print("[#] Wrong Option")
+            
+            # DIAGNOSIS
+            elif tab.upper()=="DIAGNOSIS":
+                inp_diag=input("(HMS: Choose an Option) > ")
+                if inp_diag=="1" or inp_diag.upper()=="A SPECIFIC VALUE":
+                    row_diag=input("(HMS: Enter the Patient ID) > ")
+                    column_diag=input("(HMS: Enter the Column Name) > ")
 
-        elif inp_doc=="2" or inp_doc.upper()=="COMPLETE ROW":
-            _rowD=input("(HMS: Enter the Patient ID you want to remove) > ")
-            curs.execute(f"DELETE FROM {tab} WHERE Doctor_ID={_rowD}")
-            show_table(s_table=tab)
-        
-        else:
-            print("[#] Wrong Option")
-    
-    # DIAGNOSIS
-    elif tab.upper()=="DIAGNOSIS":
-        inp_diag=input("(HMS: Choose an Option) > ")
-        if inp_diag=="1" or inp_diag.upper()=="A SPECIFIC VALUE":
-            row_diag=input("(HMS: Enter the Patient ID) > ")
-            column_diag=input("(HMS: Enter the Column Name) > ")
+                    curs.execute(f"UPDATE {tab} SET {column_diag}=NULL WHERE Doctor_ID={row_diag}")
+                    show_table(s_table=tab)
 
-            curs.execute(f"UPDATE {tab} SET {column_diag}=NULL WHERE Doctor_ID={row_diag}")
-            show_table(s_table=tab)
+                elif inp_diag=="2" or inp_diag.upper()=="COMPLETE ROW":
+                    rowdi=input("(HMS: Enter the Patient ID you want to remove) > ")
+                    curs.execute(f"DELETE FROM {tab} WHERE Patient_ID={rowdi}")
+                    show_table(s_table=tab)
+                
+                else:
+                    print("[#] Wrong Option")
+            
+            else:
+                print("[!] Error: No Table Found")
 
-        elif inp_diag=="2" or inp_diag.upper()=="COMPLETE ROW":
-            rowdi=input("(HMS: Enter the Patient ID you want to remove) > ")
-            curs.execute(f"DELETE FROM {tab} WHERE Patient_ID={rowdi}")
-            show_table(s_table=tab)
-        
-        else:
-            print("[#] Wrong Option")
-    
+            commit=input("(Do you want to commit changes?) Y/n > ")
+            if commit.upper() in ["YES", "Y"]:
+                print("\n[+] Database Updated")
+                conn.commit()
+            elif commit.upper() in ["NO", "N"]:
+                print("\n[#] No changes took place")
+            else:
+                print("\n[!] Error: Wrong input")
     else:
-        print("[!] No Table Found")
-
-    commit=input("(Do you want to commit changes?) Y/n > ")
-    if commit.upper() in ["YES", "Y"]:
-        print("\n[+] New values got added into the database")
-        conn.commit()
-    elif commit.upper() in ["NO", "N"]:
-        print("\n[#] No changes took place")
-    else:
-        print("\n[!] Error: Wrong input")
+        print("\n[!] Error: Wrong Table Name")
 
 def reset_db():
     curs=conn.cursor()
@@ -318,24 +513,27 @@ def reset_db():
         print("\n[!] Error: Wrong input")
 
 def show_table(s_table):
-    curs=conn.cursor()
-    curs.execute("SELECT * FROM "+s_table)
-    item=curs.fetchall()
-    if len(item)==0:
-        print("\n[#] No values availabe (empty table)")
-    else:
-        fmt="double_grid"
-        if s_table.upper()=="PATIENT":
-            p_header=["Patient_ID", "First_Name", "Last_Name", "Patient_Age", "Date_of_Birth", "Sex", "Address", "Phone", "Insurance_ID", "Admission_Date"]
-            print(tabulate(item, headers=p_header, tablefmt=fmt))
-        elif s_table.upper()=="DOCTOR":
-            doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Doctor_Age", "Sex", "Address", "Phone"]
-            print(tabulate(item, headers=doc_header, tablefmt=fmt))
-        elif s_table.upper()=="DIAGNOSIS":
-            diag_header=["Patient_ID", "Patient_Diagnosis", "Room_Number", "Treated_By"]
-            print(tabulate(item, headers=diag_header, tablefmt=fmt))
+    if s_table.upper() in ["PATIENT", "DOCTOR", "DIAGNOSIS"]:
+        curs=conn.cursor()
+        curs.execute("SELECT * FROM "+s_table)
+        item=curs.fetchall()
+        if len(item)==0:
+            print("\n[#] No values availabe (empty table)")
         else:
-            print("[!] Error: Wrong Table Name")
+            fmt="double_grid"
+            if s_table.upper()=="PATIENT":
+                p_header=["Patient_ID", "First_Name", "Last_Name", "Age", "Date_of_Birth", "Sex", "Address", "Phone", "Insurance_ID", "Date_Of_Admission"]
+                print(tabulate(item, headers=p_header, tablefmt=fmt))
+            elif s_table.upper()=="DOCTOR":
+                doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Sex", "Address", "Phone"]
+                print(tabulate(item, headers=doc_header, tablefmt=fmt))
+            elif s_table.upper()=="DIAGNOSIS":
+                diag_header=["Patient_ID", "Patient_Diagnosis", "Room_Number", "Treated_By"]
+                print(tabulate(item, headers=diag_header, tablefmt=fmt))
+            else:
+                print("[!] Error: Wrong Table Name")
+    else:
+        print("\n[!] Error: Wrong Table Name\n")
 
 # Code
 print("\n"+"="*81)
@@ -357,10 +555,10 @@ try:
     print("\n\t\t       Enter SQL Server Connection Details\n")
     print("—"*81)
 
-    host = input("\n(Bearz: Hostname) > ")
-    user = input("(Bearz: Username) > ")
-    db = input("(Bearz: Database Name) > ")
-    passwd = getpass("(Bearz: Database Connection Password) > ")
+    host = input("\n(Login: Hostname) > ")
+    user = input("(Login: Username) > ")
+    db = input("(Login: Database Name) > ")
+    passwd = getpass("(Login: Database Connection Password) > ")
     # By using "getpass" whenever u type the password it will be hidden in the terminal
     
     conn = sq.connect(host=host, username=user , database=db, passwd=passwd)
@@ -379,10 +577,11 @@ try:
 \t1. Describe Table
 \t2. Select Data
 \t3. Insert Value(s)
-\t4. Remove Value
-\t5. Show table
-\t6. Reset Database
-\t7. Close Connection\n""")
+\t4. Update Value(s)
+\t5. Remove Value(s)
+\t6. Show table
+\t7. Reset Database
+\t8. Close Connection\n""")
 
             action = input("(HMS: Enter Command) > ")
             if action.upper()=="DESCRIBE A TABLE" or action=="1":
@@ -391,14 +590,16 @@ try:
                 select_data()
             elif action.upper()=="INSERT VALUE" or action=="3":
                 insert_values()
-            elif action.upper()=="REMOVE VALUE" or action=="4":
+            elif action.upper()=="UPDATE VALUES" or action=="4":
+                update_data()
+            elif action.upper()=="REMOVE VALUE" or action=="5":
                 remove_value()
-            elif action.upper()=="SHOW TABLE" or action=="5":
+            elif action.upper()=="SHOW TABLE" or action=="6":
                 show_table(s_table = input("(HMS: Enter Table Name (patient, doctor, diagnosis)) > "))
-            elif action.upper()=="RESET DATABASE" or action=="6":
+            elif action.upper()=="RESET DATABASE" or action=="7":
                 reset_db()
             
-            elif action.upper()=="CLOSE CONNECTION" or action.upper()=="CLOSE" or action=="7":
+            elif action.upper()=="CLOSE CONNECTION" or action.upper()=="CLOSE" or action=="8":
                 con_quit=input("Do you want to exit (close connection) ? press 'q' to exit: ")
                 if con_quit.upper()==["QUIT"] or con_quit in ["q", "Q"]:
                     conn.close()
