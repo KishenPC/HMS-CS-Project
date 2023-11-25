@@ -228,7 +228,7 @@ def remove_value():
     print("   2. Complete row")
     print("•—————————————————————————————•\n")
 
-    inp=input("Enter which option u would like: ")
+    inp=input("(HMS: Choose an Option) > ")
     if inp=="1" or inp.upper()=="A SPECIFIC VALUE":
         row_=input("(HMS: Enter the Patient ID) > ")
         column=input("(HMS: Enter the Column Name) > ")
@@ -249,7 +249,6 @@ def remove_value():
         print("\n[#] No changes took place")
     else:
         print("\n[!] Error: Wrong input")
-
 
 def reset_db():
     curs=conn.cursor()
