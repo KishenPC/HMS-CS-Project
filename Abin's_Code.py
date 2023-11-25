@@ -459,7 +459,7 @@ except sq.Error as err:
         print("\n[!] Access Denied")
         print("[!] Make sure you have entered the right credentials for the database connection\n")
     else:
-        print("[!] Something Went Wrong")
+        print("[!] Something Went Wrong\n")
 
 # this KeyboardInterrupt error happens when u press ctrl+c
 except KeyboardInterrupt:
