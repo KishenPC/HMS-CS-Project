@@ -398,7 +398,7 @@ try:
             elif action.upper()=="RESET DATABASE" or action=="6":
                 reset_db()
             
-            elif action.upper()=="CLOSE CONNECTION" or action.upper()=="CLOSE" or action=="6":
+            elif action.upper()=="CLOSE CONNECTION" or action.upper()=="CLOSE" or action=="7":
                 con_quit=input("Do you want to exit (close connection) ? press 'q' to exit: ")
                 if con_quit.upper()==["QUIT"] or con_quit in ["q", "Q"]:
                     conn.close()
