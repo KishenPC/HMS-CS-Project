@@ -26,7 +26,7 @@ def create_tables():
         Last_Name VARCHAR(15),
         Specialization VARCHAR(30),
         Doctor_Age INT,
-        Doctor_Gender VARCHAR(6),
+        Sex VARCHAR(6),
         Address VARCHAR(50),
         Phone VARCHAR(11))""")
 
@@ -206,7 +206,7 @@ def insert_values():
                 data=list(entry)
                 curs.execute("""INSERT INTO doctor
                 (First_Name, Last_Name, Specialization,
-                Doctor_Age, Doctor_Gender, Address, Phone)
+                Doctor_Age, Sex, Address, Phone)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)""",data)
 
     commit=input("(Do you want to commit changes?) Y/n > ")
@@ -329,10 +329,10 @@ def show_table(s_table):
             p_header=["Patient_ID", "First_Name", "Last_Name", "Patient_Age", "Date_of_Birth", "Sex", "Address", "Phone", "Insurance_ID", "Admission_Date"]
             print(tabulate(item, headers=p_header, tablefmt=fmt))
         elif s_table.upper()=="DOCTOR":
-            doc_header=["Doctor ID", "First Name", "Last Name", "Specialization", "Age", "Sex", "Address", "Phone"]
+            doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Sex", "Address", "Phone"]
             print(tabulate(item, headers=doc_header, tablefmt=fmt))
         elif s_table.upper()=="DIAGNOSIS":
-            diag_header=["Patient ID", "Patient Diagnosis", "Room Number"]
+            diag_header=["Patient_ID", "Patient_Diagnosis", "Room_Number", "Treated_By"]
             print(tabulate(item, headers=diag_header, tablefmt=fmt))
         else:
             print("[!] Error: Wrong Table Name")
