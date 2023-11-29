@@ -15,6 +15,7 @@ import os
 # [&] - for showing info
 # [$] - for showing warning
 # [—] - for Unknown Command
+# [>] - for questions like "do you want to quit" etc.
 
 # Colors
 """
@@ -82,13 +83,14 @@ bold="\033[1m"
 underline="\033[4m"
 
 login_color="\033[36m"
-input_color="\033[34m"
+input_color="\033[38;2;255;0;98m"
 table_column_color="\033[94m"
 color="\033[38;2;71;165;184m"
-added_color="\033[92m"
+added_color="\033[32m"
 showing_info_color="\033[38;5;214m"
 warning_color="\033[93m"
 error_color="\033[91m"
+dis="\033[91m"
 not_availabe_color="\033[90m"
 
 hms_color=bold+"HMS:"+default
@@ -330,7 +332,7 @@ def insert_values():
                             patient_diagnosis = input(f"({hms_color} {input_color}Patient diagnosed with{default}) > ")
                             print(f"\n{showing_info_color}[&] If there is no room number, type 0{default}")
                             patient_room = int(input(f"({hms_color} {input_color}Patient Room (If Any){default}) > "))
-                            treated_by = input(f"\n({hms_color} {input_color}Treated By{default}) > ")
+                            treated_by = input(f"({hms_color} {input_color}Treated By{default}) > ")
                                 
                             if patient_room != 0:
                                 curs.execute(f"INSERT INTO diagnosis(Patient_Diagnosis, Room_Number, Treated_By) VALUES {patient_diagnosis, patient_room, treated_by}")
@@ -671,7 +673,7 @@ try:
                 reset_db()
             
             elif action.upper() in ("DISCONNECT", "8"):
-                con_quit=input("Do you wish to Disconnect? Enter 'q' to exit: ")
+                con_quit=input(f"{dis}[>] Do you wish to Disconnect? Enter 'q' to exit: {default}")
                 if con_quit.upper() in ["QUIT", "Q"]:
                     conn.close()
                     print()
@@ -685,42 +687,14 @@ try:
                 print("\n\t Commands\t Description")
                 print("\t¯¯¯¯¯¯¯¯¯¯\t¯¯¯¯¯¯¯¯¯¯¯¯¯")
                 print("\thelp\t\tHelp menu")
-                print("\tbanner\t\tDisplays a banner")
                 print("\t?\t\talias for help")
                 print("\tclear\t\tClears the screen")
-                print("""\tcolor\t\tChanges the color of the terminal\n
-                        1 = Aqua        2 = Purple
-                        3 = Blue        4 = Green
-                        5 = White""")
                 print("\n\texit\t\tExit the console")
-            elif action.upper()=="BANNER":
-                print("""
-
-██╗  ██╗    ███╗   ███╗    ███████╗
-██║  ██║    ████╗ ████║    ██╔════╝
-███████║    ██╔████╔██║    ███████╗
-██╔══██║    ██║╚██╔╝██║    ╚════██║
-██║  ██║    ██║ ╚═╝ ██║    ███████║
-╚═╝  ╚═╝    ╚═╝     ╚═╝    ╚══════╝
-                                                                             
-""")
             elif action.upper()=="CLEAR":
                 os.system("cls")
             elif action.upper()=="EXIT":
                 conn.close()
                 print()
-
-            # Terminal Color (BTW it looks so good)
-            elif action.upper()=="COLOR 1":
-                os.system("color 3")
-            elif action.upper()=="COLOR 2":
-                os.system("color 5")
-            elif action.upper()=="COLOR 3":
-                os.system("color 1")
-            elif action.upper()=="COLOR 4":
-                os.system("color 2")
-            elif action.upper()=="COLOR 5":
-                os.system("color 7")
             
             else:
                 print(f"{error_color}[—] Unknown command{default}")
@@ -739,7 +713,7 @@ except sq.Error as err:
 
 # this KeyboardInterrupt error happens when u press ctrl+c
 except KeyboardInterrupt:
-    print(f"{error_color}Press any key to exit...{default}")
+    print(f"{error_color}[>] Press any key to exit...{default}")
     # ↓ this line of code takes any keystroke
     msvcrt.getch()
     exit
