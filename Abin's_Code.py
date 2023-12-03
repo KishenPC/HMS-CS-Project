@@ -41,7 +41,7 @@ def create_tables():
         Last_Name VARCHAR(15),
         Specialization VARCHAR(30),
         Age INT,
-        Sex VARCHAR(6),
+        Gender VARCHAR(6),
         Address VARCHAR(50),
         Phone VARCHAR(11))""")
 
@@ -51,7 +51,7 @@ def create_tables():
         Last_Name VARCHAR(15),
         Age INT,
         Date_of_Birth DATE,
-        Sex VARCHAR(6),
+        Gender VARCHAR(6),
         Address VARCHAR(50),
         Phone VARCHAR(11),
         Insurance_ID INT,
@@ -82,6 +82,7 @@ default="\033[0m"
 bold="\033[1m"
 underline="\033[4m"
 
+list_heading="\033[38;2;20;0;175m"
 login_color="\033[36m"
 input_color="\033[38;2;255;0;98m"
 table_column_color="\033[94m"
@@ -160,10 +161,10 @@ def all_tables():
     if len(tables) == 0:
         print(f"{not_availabe_color}[#] There Are No Available Tables in Your Database{default}") 
     else:
-        print("\t•———————————————————•")
+        print(f"\t{list_heading}•———————————————————•{default}")
         for i in tables:
             print(f"\t{tables.index(i)+1}. {i}")
-        print("\t•———————————————————•")
+        print(f"\t{list_heading}•———————————————————•{default}")
 
 # DESCRIBE TABLE
 def describe_table():
@@ -191,7 +192,7 @@ def select_data():
         
         if table.upper()=="PATIENT":
             p_h=[]
-            p_header=["Patient_ID", "First_Name", "Last_Name", "Age", "Date_Of_Birth", "Sex", "Address", "Phone", "Insurance ID", "Date_Of_Admission"]
+            p_header=["Patient_ID", "First_Name", "Last_Name", "Age", "Date_Of_Birth", "Gender", "Address", "Phone", "Insurance ID", "Date_Of_Admission"]
             for p in p_header:
                 p_h.append(f"{table_column_color}{p}{default}")
             print()
@@ -200,7 +201,7 @@ def select_data():
         
         elif table.upper()=="DOCTOR":
             doc_h=[]
-            doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Sex", "Address", "Phone"]
+            doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Gender", "Address", "Phone"]
             for doc in doc_header:
                 doc_h.append(f"{table_column_color}{doc}{default}")
             print()
@@ -315,11 +316,11 @@ def insert_values():
 
                             curs.execute("""INSERT INTO patient
                             (First_Name, Last_Name, Age, Date_of_Birth, 
-                            Sex, Address, Phone, Insurance_ID, Date_Of_Admission) 
+                            Gender, Address, Phone, Insurance_ID, Date_Of_Admission) 
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""", e) #For 9 Columned Row Of Inputs
 
                             # This is required (Because when we dont have a value it enteres nothing in the db cell, it should enter NULL)
-                            col=["Patinet_ID", "First_Name", "Last_Name", "Age", "Sex", "Insrance_ID", "Date_Of_Birth", "Address", "Phone", "Date_Of_Admission"]
+                            col=["Patinet_ID", "First_Name", "Last_Name", "Age", "Gender", "Insrance_ID", "Date_Of_Birth", "Address", "Phone", "Date_Of_Admission"]
                             for it in col:
                                 query=f"""UPDATE patient
                                             SET {it}=NULL
@@ -351,7 +352,7 @@ def insert_values():
                             data=list(entry)
                             curs.execute("""INSERT INTO doctor
                             (First_Name, Last_Name, Specialization,
-                            Age, Sex, Address, Phone)
+                            Age, Gender, Address, Phone)
                             VALUES (%s, %s, %s, %s, %s, %s, %s)""", data)
                     
                     commit=input("(Do you want to commit changes?) Y/n > ")
@@ -384,13 +385,13 @@ def update_data():
 
         elif len(item)!=0:
             if table.upper()=="PATIENT":
-                p_header=["Patient_ID", "First_Name", "Last_Name", "Age", "Date_Of_Birth", "Sex", "Address", "Phone", "Insurance ID", "Date_Of_Admission"]
+                p_header=["Patient_ID", "First_Name", "Last_Name", "Age", "Date_Of_Birth", "Gender", "Address", "Phone", "Insurance ID", "Date_Of_Admission"]
                 print()
                 print(tabulate([p_header], tablefmt=fmt))
                 print()
             
             elif table.upper()=="DOCTOR":
-                doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Sex", "Address", "Phone"]
+                doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Gender", "Address", "Phone"]
                 print()
                 print(tabulate([doc_header], tablefmt=fmt))
                 print()
@@ -576,14 +577,14 @@ def show_table(s_table):
         else:
             if s_table.upper()=="PATIENT":
                 p_h=[]
-                p_header=["Patient_ID", "First_Name", "Last_Name", "Age", "Date_of_Birth", "Sex", "Address", "Phone", "Insurance_ID", "Date_Of_Admission"]
+                p_header=["Patient_ID", "First_Name", "Last_Name", "Age", "Date_of_Birth", "Gender", "Address", "Phone", "Insurance_ID", "Date_Of_Admission"]
                 for p in p_header:
                     p_h.append(f"{table_column_color}{p}{default}")
                 print(tabulate(item, headers=p_h, tablefmt=fmt))
 
             elif s_table.upper()=="DOCTOR":
                 doc_h=[]
-                doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Sex", "Address", "Phone"]
+                doc_header=["Doctor_ID", "First_Name", "Last_Name", "Specialization", "Age", "Gender", "Address", "Phone"]
                 for doc in doc_header:
                     doc_h.append(f"{table_column_color}{doc}{default}")
                 print(tabulate(item, headers=doc_h, tablefmt=fmt))
@@ -604,7 +605,7 @@ welcome_text_color="\033[95m"
 start_color="\033[92m"
 
 col="\033[32m"
-print(f"\n{bold}{col}Starting the Hospital Management System Console.../{default}")
+print(f"\n{bold}{col}[@] Starting the Hospital Management System Console.../{default}")
 time.sleep(0.5)
 
 print("\n"+"="*81)
@@ -638,14 +639,14 @@ try:
         time.sleep(1)
         print(f"\n{bold}{welcome_text_color}[⁎] Connected to {host}{default}")
         print(f"{bold}{welcome_text_color}[⁎] Welcome To The {db} Databse Interface{default}\n")
-        print("List of Tables:-")
+        print(f"{list_heading}List of Tables:-{default}")
         hosptial_db_setup()
         all_tables()
 
         while conn.is_connected():
-            print("""\nDatabase Queries:-
+            print(f"""\n{list_heading}Database Queries:-{default}
 
-\t•———————————————————•
+\t{list_heading}•———————————————————•{default}
  \t1. Describe Table
  \t2. Select Data
  \t3. Insert Value(s)
@@ -654,7 +655,7 @@ try:
  \t6. Show table
  \t7. Reset Database
  \t8. Disconnect
-\t•———————————————————•\n""")
+\t{list_heading}•———————————————————•{default}\n""")
 
             action = input(f"({hms_color} {input_color}Enter Command{default}) > ")
             if action.upper() in ("DESCRIBE TABLE", "1"):
