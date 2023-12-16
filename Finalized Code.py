@@ -702,8 +702,8 @@ try:
 
 # Interface error(is the server is not running)
 except sq.InterfaceError:
-    print(f"\n{error_color}[!] Error: Check if the Server is running or not{default}\n")
-
+    print(f"\n{error_color}[!] Error: Check if the Server is running or not{default}")
+    print(f"{error_color}Or make sure you have entered the correct Hostname{default}\n")
 # This works only if the credentials are wrong
 except sq.Error as err:
     if err.errno==sq.errorcode.ER_ACCESS_DENIED_ERROR:
