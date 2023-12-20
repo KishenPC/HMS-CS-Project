@@ -612,7 +612,7 @@ print("\n"+"="*81)
 print(f"  [{start_color}Project{default}] Hospital Management System")
 print("="*81)
 
-print(f"  [{start_color}Credits{default}] Abin Krishna, Kishen PC, Vaishak")
+print(f"  [{start_color}Credits{default}] Abin Krishna, Kishen PC, MP Vaishak Anoop Nambiar")
 print("="*81+"""\033[37m
             
                        ██╗  ██╗    ███╗   ███╗    ███████╗
